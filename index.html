@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sanvyara AI</title>
+<style>
+  :root { --brand:#5b5bf0; --brand2:#8b5cf6; --bg:#f4f5fb; --card:#fff; --line:#e6e8f2; --text:#1b1d3a;
+          --muted:#6b7090; --err:#dc2626; --shadow:0 2px 12px rgba(40,44,100,.07); }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  [hidden] { display:none !important; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:14px 18px; color:#fff;
+           background:linear-gradient(120deg,var(--brand),var(--brand2)); position:sticky; top:0; z-index:5; }
+  .logo { font-weight:800; font-size:18px; letter-spacing:.2px; }
+  .who { font-size:13px; display:flex; gap:10px; align-items:center; opacity:.95; }
+  .who .link { color:#fff; text-decoration:underline; }
+  nav { position:fixed; left:0; right:0; bottom:0; z-index:6; display:flex; background:var(--card); border-top:1px solid var(--line);
+        padding:6px 8px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -4px 16px rgba(40,44,100,.06); }
+  nav button { flex:1; display:grid; gap:1px; justify-items:center; border:0; background:none; font:inherit; font-size:12px; font-weight:600; color:var(--muted); padding:6px; border-radius:12px; cursor:pointer; }
+  nav button span { font-size:20px; line-height:1.2; }
+  nav button.on { color:var(--brand); background:#eef0ff; }
+  main { max-width:720px; margin:0 auto; padding:14px 16px 96px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; display:grid; gap:12px; box-shadow:var(--shadow); }
+  .card h3 { margin:0; font-size:16px; }
+  select, input { width:100%; padding:12px; font:inherit; border:1px solid #d5d8ea; border-radius:12px; background:#fff; color:var(--text); }
+  select:disabled { background:#f1f2f8; color:#9ca0bd; }
+  input:focus, select:focus { outline:2px solid var(--brand); border-color:transparent; }
+  .btn { padding:12px 18px; border:0; border-radius:12px; color:#fff; font:inherit; font-weight:700; cursor:pointer;
+         background:linear-gradient(120deg,var(--brand),var(--brand2)); box-shadow:0 4px 12px rgba(91,91,240,.3); }
+  .btn:disabled { opacity:.6; box-shadow:none; }
+  .link { background:none; border:0; padding:0; color:var(--brand); font:inherit; cursor:pointer; }
+  .muted { color:var(--muted); font-size:13px; }
+  .msg { padding:10px 14px; border-radius:12px; font-size:14px; }
+  .msg.err { background:#fef2f2; color:var(--err); }
+  .msg.warn { background:#fff7e6; color:#92400e; }
+  .auth { max-width:400px; margin:0 auto; padding:0 16px 24px; }
+  .hero { margin:0 -16px 22px; padding:48px 20px 40px; text-align:center; color:#fff; border-radius:0 0 28px 28px; background:linear-gradient(120deg,var(--brand),var(--brand2)); }
+  .hero h1 { margin:0 0 6px; font-size:28px; } .hero p { margin:0; opacity:.9; }
+  .chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
+  .chip { flex:none; padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; font:inherit; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+  .chip.on { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .thread { display:grid; gap:12px; margin:4px 0 14px; }
+  .bubble { padding:11px 15px; border-radius:18px; white-space:pre-wrap; word-wrap:break-word; max-width:90%; box-shadow:var(--shadow); }
+  .bubble.me { background:linear-gradient(120deg,var(--brand),var(--brand2)); color:#fff; justify-self:end; border-bottom-right-radius:6px; }
+  .bubble.ai { background:#fff; border:1px solid var(--line); justify-self:start; border-bottom-left-radius:6px; }
+  .dots::after { content:'●●●'; letter-spacing:3px; font-size:10px; color:var(--muted); animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+  .ask { display:flex; gap:8px; position:sticky; bottom:78px; padding:8px; background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 6px 20px rgba(40,44,100,.12); }
+  .ask input { border:0; } .ask input:focus { outline:none; }
+  .ask .btn { padding:10px 18px; }
+  .empty { text-align:center; padding:34px 10px; color:var(--muted); } .empty b { display:block; font-size:34px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .doc { display:flex; gap:12px; align-items:center; min-width:0; }
+  .doc .ic { flex:none; width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:#eef0ff; font-size:20px; }
+  .name { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .open { color:var(--brand); text-decoration:none; font-weight:700; font-size:14px; padding:6px 12px; background:#eef0ff; border-radius:10px; }
+  .x { background:none; border:0; color:var(--err); cursor:pointer; font-size:17px; }
+  .drop { display:grid; gap:4px; justify-items:center; padding:20px; border:2px dashed #c9ccee; border-radius:14px; color:var(--muted); background:#fafaff; cursor:pointer; text-align:center; }
+  .drop b { color:var(--brand); } .drop input { display:none; }
+  ul.tree { margin:0; padding-left:18px; font-size:14px; }
+  .foot { text-align:center; font-size:12px; color:var(--muted); padding:18px 10px 6px; }
+  .foot b { color:var(--brand); }
+  .auth .foot { padding-top:26px; }
+  .bubble .sig { display:block; margin-top:10px; padding-top:6px; border-top:1px dashed var(--line); font-size:11.5px; color:var(--muted); }
+  textarea { width:100%; min-height:140px; padding:12px; font:inherit; border:1px solid #d5d8ea; border-radius:12px; resize:vertical; }
+  textarea:focus { outline:2px solid var(--brand); border-color:transparent; }
+  #toast { position:fixed; left:50%; bottom:92px; transform:translateX(-50%); background:#1b1d3a; color:#fff; padding:11px 18px; border-radius:12px; font-size:14px; z-index:9; max-width:90vw; }
+  #toast.err { background:var(--err); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" hidden></div>
+
+<script>
+// ---------- tiny helpers ----------
+// h('div', {class:'x', onclick:fn}, child1, child2)  -> DOM element. Strings become text (safe from XSS).
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'class') el.className = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  el.append(...kids.flat().filter(k => k != null && k !== false));
+  return el;
+}
+
+const $app = document.getElementById('app');
+const $toast = document.getElementById('toast');
+let toastTimer;
+function toast(text, isErr) {
+  $toast.textContent = text;
+  $toast.className = isErr ? 'err' : '';
+  $toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $toast.hidden = true, 3200);
+}
+
+function load(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } }
+const state = { token: load('sv_token'), user: load('sv_user'), tree: [], docs: [], tab: 'ask', demo: false, drive: false, hint: '' };
+
+function logout() {
+  localStorage.removeItem('sv_token'); localStorage.removeItem('sv_user');
+  state.token = state.user = null; state.tree = []; state.tab = 'ask';
+  render();
+}
+
+async function api(path, method = 'GET', body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (res.status === 401 && state.token) { logout(); throw new Error('Session expired. Please log in again.'); }
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Please fill in all fields');
+  return data;
+}
+
+// Run an action, show an error toast if it fails
+async function safe(fn) { try { return await fn(); } catch (e) { toast(e.message, true); } }
+
+const FOOTER = 'Design & Developed by Mr. Rohit';
+const footerEl = () => h('div', { class: 'foot' }, 'Design & Developed by ', h('b', {}, 'Mr. Rohit'));
+
+// **bold** support for AI answers (everything else stays plain text)
+function rich(text) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => i % 2 ? h('strong', {}, part) : part);
+}
+
+// ---------- Course > Semester > Subject dropdowns ----------
+// levels: 1 = course only, 2 = + semester, 3 = + subject
+function picker(levels, onChange) {
+  const names = ['Course', 'Semester', 'Subject'];
+  const idKey = ['course_id', 'semester_id', 'subject_id'];
+  const label = [c => c.course_name, s => s.semester_name, s => (s.subject_code ? s.subject_code + ' - ' : '') + s.subject_name];
+  const sel = names.slice(0, levels).map(() => h('select'));
+
+  function options(i) {
+    let list = state.tree;
+    if (i >= 1) list = (list.find(c => c.course_id === sel[0].value) || {}).semesters || [];
+    if (i >= 2) list = (list.find(s => s.semester_id === sel[1].value) || {}).subjects || [];
+    return list;
+  }
+  function fill(i) {
+    sel[i].replaceChildren(
+      h('option', { value: '' }, names[i]),
+      ...options(i).map(x => h('option', { value: x[idKey[i]] }, label[i](x)))
+    );
+    sel[i].disabled = i > 0 && !sel[i - 1].value;
+  }
+  sel.forEach((s, i) => {
+    s.addEventListener('change', () => {
+      for (let j = i + 1; j < levels; j++) fill(j);
+      if (onChange) onChange(get());
+    });
+    fill(i);
+  });
+  const get = () => ({ course_id: sel[0].value, semester_id: sel[1]?.value || '', subject_id: sel[2]?.value || '' });
+  return { el: h('div', { style: 'display:grid;gap:8px' }, sel), get };
+}
+
+// subject ids that match the current dropdown selection
+function subjectIdsFor(v) {
+  const ids = [];
+  for (const c of state.tree) {
+    if (v.course_id && c.course_id !== v.course_id) continue;
+    for (const s of c.semesters) {
+      if (v.semester_id && s.semester_id !== v.semester_id) continue;
+      for (const sub of s.subjects) if (!v.subject_id || sub.subject_id === v.subject_id) ids.push(sub.subject_id);
+    }
+  }
+  return ids;
+}
+function subjectName(id) {
+  for (const c of state.tree) for (const s of c.semesters) for (const sub of s.subjects) if (sub.subject_id === id) return sub.subject_name;
+  return '';
+}
+
+// ---------- Login / Register ----------
+function authView() {
+  let mode = 'login';
+  const name = h('input', { placeholder: 'Full name', autocomplete: 'name' });
+  const email = h('input', { type: 'email', placeholder: 'Email', required: true, autocomplete: 'email' });
+  const pass = h('input', { type: 'password', placeholder: 'Password', required: true, minlength: 6 });
+  const err = h('div', { class: 'msg err', hidden: true });
+  const btn = h('button', { class: 'btn', type: 'submit' }, 'Login');
+  const switchBtn = h('button', { class: 'link', type: 'button' });
+
+  function paint() {
+    const login = mode === 'login';
+    name.hidden = login;
+    btn.textContent = login ? 'Login' : 'Create account';
+    switchBtn.textContent = login ? 'New here? Register' : 'Have an account? Login';
+    err.hidden = true;
+  }
+  switchBtn.onclick = () => { mode = mode === 'login' ? 'register' : 'login'; paint(); };
+
+  const form = h('form', {
+    class: 'card',
+    onsubmit: async e => {
+      e.preventDefault();
+      err.hidden = true; btn.disabled = true;
+      try {
+        const body = mode === 'login' ? { email: email.value, password: pass.value }
+                                      : { name: name.value, email: email.value, password: pass.value };
+        const r = await api(mode === 'login' ? '/api/login' : '/api/register', 'POST', body);
+        state.token = r.token; state.user = r.user;
+        localStorage.setItem('sv_token', JSON.stringify(r.token));
+        localStorage.setItem('sv_user', JSON.stringify(r.user));
+        await boot();
+      } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+      finally { btn.disabled = false; }
+    },
+  }, name, email, pass, err, btn, h('div', { class: 'muted', style: 'text-align:center' }, switchBtn));
+  paint();
+
+  $app.replaceChildren(h('div', { class: 'auth' },
+    h('div', { class: 'hero' }, h('h1', {}, '🧠 Sanvyara AI'), h('p', {}, 'Your smart college study assistant')),
+    form,
+    state.demo ? h('p', { class: 'muted', style: 'text-align:center' },
+      'Demo mode (' + (state.hint || 'Sheet not connected') + ')', h('br'), 'Admin: admin@sanvyara.ai / admin123', h('br'), 'Student: rahul@example.com / student123') : null,
+    footerEl()
+  ));
+}
+
+// ---------- Ask AI ----------
+const MODES = [['answer', 'Answer'], ['summary', 'Summary'], ['notes', 'Notes'], ['exam', 'Exam answer'], ['mcq', 'MCQs']];
+
+function askView(main) {
+  let mode = 'answer';
+  const sem = h('select', {}, h('option', { value: '' }, 'All semesters'),
+    state.tree.flatMap(c => c.semesters.map(s => h('option', { value: s.semester_id }, `${c.course_name} · ${s.semester_name}`))));
+  const chips = h('div', { class: 'chips' }, MODES.map(([v, l]) =>
+    h('button', { type: 'button', class: v === mode ? 'chip on' : 'chip', onclick: e => {
+      mode = v; [...chips.children].forEach(c => c.classList.toggle('on', c === e.currentTarget));
+    } }, l)));
+  const thread = h('div', { class: 'thread' });
+  const hint = h('div', { class: 'empty' }, h('b', {}, '💬'), 'Ask any question — answers come from your uploaded notes.');
+  const input = h('input', { placeholder: 'Type your question…', maxlength: 1000, required: true, autocomplete: 'off' });
+  const send = h('button', { class: 'btn', type: 'submit' }, 'Send');
+
+  function bubble(role, text) {
+    hint.remove();
+    let body = text, sig = false;
+    if (role === 'ai' && text && text.includes('— ' + FOOTER)) { body = text.split('\n\n— ' + FOOTER)[0]; sig = true; }
+    const b = h('div', { class: 'bubble ' + role }, body == null ? null : rich(body),
+      sig ? h('span', { class: 'sig' }, '— ' + FOOTER) : null);
+    if (text == null) b.classList.add('dots');
+    thread.append(b);
+    b.scrollIntoView({ block: 'nearest' });
+    return b;
+  }
+
+  const form = h('form', {
+    class: 'ask',
+    onsubmit: async e => {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = ''; send.disabled = true;
+      bubble('me', q);
+      const wait = bubble('ai', null);
+      try {
+        const r = await api('/api/ask', 'POST', { question: q, semester_id: sem.value || null, mode });
+        wait.remove(); bubble('ai', r.answer);
+      } catch (ex) { wait.remove(); bubble('ai', 'Sorry: ' + ex.message); }
+      finally { send.disabled = false; input.focus(); }
+    },
+  }, input, send);
+
+  main.append(h('div', { class: 'card' }, sem, chips), hint, thread, form);
+
+  api('/api/history').then(rows => {
+    rows.reverse().forEach(r => { bubble('me', r.question); bubble('ai', r.answer); });
+  }).catch(() => {});
+}
+
+// ---------- Library (upload to Drive) ----------
+const toBase64 = f => new Promise((ok, bad) => {
+  const r = new FileReader();
+  r.onload = () => ok(r.result.split(',')[1]); r.onerror = bad; r.readAsDataURL(f);
+});
+
+async function libraryView(main) {
+  const list = h('div');
+  const pick = picker(3, draw);
+
+  function draw() {
+    const ids = subjectIdsFor(pick.get());
+    const docs = state.docs.filter(d => ids.includes(d.subject_id));
+    list.replaceChildren(...(docs.length ? docs.map(d => {
+      const canDelete = state.user.role === 'admin' || d.uploaded_by === state.user.user_id;
+      const safeLink = /^https?:\/\//.test(d.drive_link);
+      return h('div', { class: 'card' }, h('div', { class: 'row' },
+        h('div', { class: 'doc' }, h('div', { class: 'ic' }, '📄'), h('div', { style: 'min-width:0' },
+          h('div', { class: 'name' }, d.pdf_name),
+          h('div', { class: 'muted' }, `${subjectName(d.subject_id)} · ${d.document_type}`))),
+        h('div', { class: 'row' },
+          safeLink ? h('a', { class: 'open', href: d.drive_link, target: '_blank', rel: 'noopener noreferrer' }, 'Open') : null,
+          canDelete ? h('button', { class: 'x', title: 'Delete', onclick: () => remove(d.document_id) }, '🗑') : null)));
+    }) : [h('div', { class: 'empty' }, h('b', {}, '📚'), 'No documents here yet.')]));
+  }
+
+  async function reload() {
+    await safe(async () => { state.docs = await api('/api/documents'); });
+    draw();
+  }
+  async function remove(id) {
+    if (!confirm('Delete this document?')) return;
+    await safe(async () => { await api('/api/documents/' + id, 'DELETE'); toast('Deleted'); });
+    reload();
+  }
+
+  // upload form
+  const addPick = picker(3);
+  const name = h('input', { placeholder: 'Document name', required: true });
+  const fileLabel = h('b', {}, 'Tap to choose a file');
+  const file = h('input', { type: 'file', accept: '.pdf,.docx,.pptx,.txt' });
+  file.onchange = () => { fileLabel.textContent = file.files[0] ? file.files[0].name : 'Tap to choose a file'; };
+  const link = h('input', { type: 'url', placeholder: 'or paste a Google Drive link' });
+  const type = h('select', {}, ['Notes', 'Book', 'PPT', 'PYQ'].map(t => h('option', {}, t)));
+  const btn = h('button', { class: 'btn', type: 'submit' }, 'Upload');
+  const upForm = h('form', {
+    class: 'card',
+    onsubmit: async e => {
+      e.preventDefault();
+      const subject_id = addPick.get().subject_id, f = file.files[0];
+      if (!subject_id) return toast('Select course, semester and subject', true);
+      if (!f && !link.value) return toast('Choose a file or paste a link', true);
+      if (f && f.size > 10 * 1024 * 1024) return toast('File is too large (max 10 MB)', true);
+      btn.disabled = true; btn.textContent = f ? 'Reading file…' : 'Saving…';
+      const ok = await safe(async () => {
+        if (f) return await api('/api/upload', 'POST', { subject_id, pdf_name: name.value, filename: f.name, data: await toBase64(f), document_type: type.value });
+        return await api('/api/documents', 'POST', { subject_id, pdf_name: name.value, drive_link: link.value, document_type: type.value });
+      });
+      const res = ok;
+      btn.disabled = false; btn.textContent = 'Upload';
+      if (ok) { toast(res && res.chunks === 0 ? 'Saved, but the AI could not read any text (scanned file, or Drive script not updated). Try Admin → Sync.' : 'Saved to Drive ✓ — AI can now answer from it'); name.value = link.value = ''; file.value = ''; fileLabel.textContent = 'Tap to choose a file'; reload(); }
+    },
+  }, h('h3', {}, '⬆ Upload document'), addPick.el, name,
+     h('label', { class: 'drop' }, h('span', { style: 'font-size:26px' }, '📎'), fileLabel, h('span', { class: 'muted' }, 'PDF, Word, PPT, TXT · max 10 MB · saved to Drive, AI learns from it'), file),
+     state.drive ? null : h('div', { class: 'msg warn' }, '⚠ Google Drive is not connected on the server — set DRIVE_UPLOAD_URL (README step 2). Without Drive, files cannot be uploaded.'),
+     link, type, btn);
+
+  main.append(h('div', { class: 'card' }, pick.el), list, upForm);
+  await reload();
+}
+
+// ---------- Admin ----------
+function adminView(main) {
+  async function create(path, body, okText) {
+    const ok = await safe(async () => { await api(path, 'POST', body); return true; });
+    if (ok) { toast(okText); await safe(loadTree); render(); }
+  }
+
+  const courseName = h('input', { placeholder: 'Course name (e.g. BCA)', required: true });
+  const courseForm = h('form', { class: 'card', onsubmit: e => { e.preventDefault(); create('/api/admin/course', { course_name: courseName.value }, 'Course added'); } },
+    h('h3', {}, 'Add course'), courseName, h('button', { class: 'btn', type: 'submit' }, 'Add course'));
+
+  const semPick = picker(1);
+  const semName = h('input', { placeholder: 'Semester name (e.g. Semester 4)', required: true });
+  const semForm = h('form', { class: 'card', onsubmit: e => {
+      e.preventDefault();
+      const course_id = semPick.get().course_id;
+      if (!course_id) return toast('Select a course', true);
+      create('/api/admin/semester', { course_id, semester_name: semName.value }, 'Semester added');
+    } }, h('h3', {}, 'Add semester'), semPick.el, semName, h('button', { class: 'btn', type: 'submit' }, 'Add semester'));
+
+  const subPick = picker(2);
+  const subCode = h('input', { placeholder: 'Subject code (e.g. BCA-401)' });
+  const subName = h('input', { placeholder: 'Subject name (e.g. DBMS)', required: true });
+  const subForm = h('form', { class: 'card', onsubmit: e => {
+      e.preventDefault();
+      const semester_id = subPick.get().semester_id;
+      if (!semester_id) return toast('Select course and semester', true);
+      create('/api/admin/subject', { semester_id, subject_code: subCode.value, subject_name: subName.value }, 'Subject added');
+    } }, h('h3', {}, 'Add subject'), subPick.el, subCode, subName, h('button', { class: 'btn', type: 'submit' }, 'Add subject'));
+
+  const kPick = picker(3);
+  const kTitle = h('input', { placeholder: 'Title (e.g. Normalization)', required: true });
+  const kText = h('textarea', { placeholder: 'Paste your notes / answers here. The AI will answer only from this text.', required: true });
+  const kBtn = h('button', { class: 'btn', type: 'submit' }, 'Save knowledge');
+  const kForm = h('form', { class: 'card', onsubmit: async e => {
+      e.preventDefault();
+      const subject_id = kPick.get().subject_id;
+      if (!subject_id) return toast('Select course, semester and subject', true);
+      kBtn.disabled = true;
+      const r = await safe(() => api('/api/admin/knowledge', 'POST', { subject_id, title: kTitle.value, text: kText.value }));
+      kBtn.disabled = false;
+      if (r) { toast('Saved (' + r.chunks + ' parts) ✓'); kTitle.value = kText.value = ''; }
+    } }, h('h3', {}, '🧠 Add knowledge for AI'), kPick.el, kTitle, kText, kBtn);
+
+  const syncBtn = h('button', { class: 'btn', type: 'button', onclick: async () => {
+      syncBtn.disabled = true; syncBtn.textContent = 'Reading Drive files…';
+      const r = await safe(() => api('/api/admin/sync', 'POST'));
+      syncBtn.disabled = false; syncBtn.textContent = 'Sync Drive files for AI';
+      if (r) toast(`AI learned ${r.learned} file(s)` + (r.failed ? `, ${r.failed} could not be read` : ''));
+    } }, 'Sync Drive files for AI');
+  const syncCard = h('div', { class: 'card' }, h('h3', {}, '🔄 Drive → AI'),
+    h('p', { class: 'muted', style: 'margin:0' }, 'Reads every Drive document the AI has not learned from yet (old files or links added earlier).'), syncBtn);
+
+  const overview = h('div', { class: 'card' }, h('h3', {}, 'Current structure'),
+    state.tree.length ? h('ul', { class: 'tree' }, state.tree.map(c =>
+      h('li', {}, c.course_name, h('ul', {}, c.semesters.map(s =>
+        h('li', {}, `${s.semester_name} — `, s.subjects.map(x => x.subject_name).join(', ') || 'no subjects')))))) :
+      h('p', { class: 'muted' }, 'Nothing yet. Add a course to start.'));
+
+  main.append(
+    state.demo ? h('div', { class: 'msg warn', style: 'margin-bottom:12px' }, '⚠ Google Sheet is not connected — data is temporary. Reason: ' + (state.hint || 'unknown')) : null,
+    courseForm, semForm, subForm, kForm, syncCard, overview);
+}
+
+// ---------- App shell ----------
+function shell() {
+  if (state.tab === 'admin' && state.user.role !== 'admin') state.tab = 'ask';
+  const tabs = [['ask', '💬', 'Ask AI'], ['library', '📚', 'Library']];
+  if (state.user.role === 'admin') tabs.push(['admin', '⚙️', 'Admin']);
+
+  const main = h('main');
+  $app.replaceChildren(
+    h('header', {}, h('div', { class: 'logo' }, '🧠 Sanvyara AI'),
+      h('div', { class: 'who' }, state.user.name, h('button', { class: 'link', onclick: logout }, 'Logout'))),
+    main,
+    h('nav', {}, tabs.map(([id, icon, label]) =>
+      h('button', { class: state.tab === id ? 'on' : '', onclick: () => { state.tab = id; render(); } }, h('span', {}, icon), label))));
+  ({ ask: askView, library: libraryView, admin: adminView })[state.tab](main);
+  main.append(footerEl());
+}
+
+function render() { state.user ? shell() : authView(); }
+
+async function loadTree() { state.tree = await api('/api/tree'); }
+
+async function boot() {
+  await safe(async () => { state.tree = await api('/api/tree'); });
+  render();
+}
+
+(async function init() {
+  try { const info = await fetch('/api/info').then(r => r.json()); state.demo = info.demo; state.drive = info.drive; state.hint = info.hint; } catch {}
+  if (state.token) {
+    try { state.user = await api('/api/me'); localStorage.setItem('sv_user', JSON.stringify(state.user)); await boot(); return; }
+    catch { /* token invalid -> logged out by api() */ }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
